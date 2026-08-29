@@ -19,6 +19,12 @@ public class GlobalExceptionHandler {
     return new ApiError(HttpStatus.NOT_FOUND.value(), ex.getMessage());
   }
 
+  @ExceptionHandler(ConflictException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public ApiError handleConflict(ConflictException ex) {
+    return new ApiError(HttpStatus.CONFLICT.value(), ex.getMessage());
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ApiError handleValidation(MethodArgumentNotValidException ex) {
