@@ -1,5 +1,6 @@
 package com.sgv.api.viagem;
 
+import com.sgv.api.colaborador.Colaborador;
 import com.sgv.api.destino.Destino;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,8 @@ class ViagemControllerTest {
 
   private ViagemResponse response() {
     Destino destino = new Destino("Matriz SP", "São Paulo", "Brasil");
-    Viagem viagem = new Viagem(destino, "Reunião com cliente", LocalDate.of(2026, 9, 10),
+    Colaborador colaborador = new Colaborador("M-1001", "Ana Souza", "Comercial");
+    Viagem viagem = new Viagem(destino, colaborador, "Reunião com cliente", LocalDate.of(2026, 9, 10),
         LocalDate.of(2026, 9, 12), MeioTransporte.AEREO, SituacaoViagem.RASCUNHO);
     return new ViagemResponse(viagem);
   }
@@ -39,6 +41,7 @@ class ViagemControllerTest {
     return """
         {
           "destinoId": 1,
+          "colaboradorId": 2,
           "motivo": "%s",
           "dataSaida": "2026-09-10",
           "dataRetorno": "%s",
@@ -56,7 +59,8 @@ class ViagemControllerTest {
         .andExpect(jsonPath("$[0].motivo").value("Reunião com cliente"))
         .andExpect(jsonPath("$[0].situacao").value("RASCUNHO"))
         .andExpect(jsonPath("$[0].dataSaida").value("2026-09-10"))
-        .andExpect(jsonPath("$[0].destino.cidade").value("São Paulo"));
+        .andExpect(jsonPath("$[0].destino.cidade").value("São Paulo"))
+        .andExpect(jsonPath("$[0].colaborador.matricula").value("M-1001"));
   }
 
   @Test

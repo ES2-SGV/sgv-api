@@ -1,6 +1,7 @@
 //Entity
 package com.sgv.api.viagem;
 
+import com.sgv.api.colaborador.Colaborador;
 import com.sgv.api.destino.Destino;
 import jakarta.persistence.*;
 
@@ -18,6 +19,10 @@ public class Viagem {
   @ManyToOne(optional = false)
   @JoinColumn(name = "destino_id", nullable = false)
   private Destino destino;
+
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "colaborador_id", nullable = false)
+  private Colaborador colaborador;
 
   @Column(nullable = false)
   private String motivo;
@@ -39,9 +44,10 @@ public class Viagem {
   public Viagem() {
   }
 
-  public Viagem(Destino destino, String motivo, LocalDate dataSaida, LocalDate dataRetorno,
-      MeioTransporte meioTransporte, SituacaoViagem situacao) {
+  public Viagem(Destino destino, Colaborador colaborador, String motivo, LocalDate dataSaida,
+      LocalDate dataRetorno, MeioTransporte meioTransporte, SituacaoViagem situacao) {
     this.destino = destino;
+    this.colaborador = colaborador;
     this.motivo = motivo;
     this.dataSaida = dataSaida;
     this.dataRetorno = dataRetorno;
@@ -59,6 +65,14 @@ public class Viagem {
 
   public void setDestino(Destino destino) {
     this.destino = destino;
+  }
+
+  public Colaborador getColaborador() {
+    return this.colaborador;
+  }
+
+  public void setColaborador(Colaborador colaborador) {
+    this.colaborador = colaborador;
   }
 
   public String getMotivo() {

@@ -1,5 +1,8 @@
 package com.sgv.api.viagem;
 
+import com.sgv.api.colaborador.Colaborador;
+import com.sgv.api.colaborador.ColaboradorNotFoundException;
+import com.sgv.api.colaborador.ColaboradorRepository;
 import com.sgv.api.destino.Destino;
 import com.sgv.api.destino.DestinoNotFoundException;
 import com.sgv.api.destino.DestinoRepository;
@@ -12,10 +15,13 @@ public class ViagemService {
 
   private final ViagemRepository repository;
   private final DestinoRepository destinoRepository;
+  private final ColaboradorRepository colaboradorRepository;
 
-  public ViagemService(ViagemRepository repository, DestinoRepository destinoRepository) {
+  public ViagemService(ViagemRepository repository, DestinoRepository destinoRepository,
+      ColaboradorRepository colaboradorRepository) {
     this.repository = repository;
     this.destinoRepository = destinoRepository;
+    this.colaboradorRepository = colaboradorRepository;
   }
 
   public List<ViagemResponse> findAll() {
@@ -33,6 +39,7 @@ public class ViagemService {
   public ViagemResponse create(ViagemRequest request) {
     Viagem viagem = new Viagem(
         buscarDestino(request.getDestinoId()),
+        buscarColaborador(request.getColaboradorId()),
         request.getMotivo(),
         request.getDataSaida(),
         request.getDataRetorno(),
@@ -45,6 +52,7 @@ public class ViagemService {
     Viagem viagem = repository.findById(id)
         .orElseThrow(() -> new ViagemNotFoundException(id));
     viagem.setDestino(buscarDestino(request.getDestinoId()));
+    viagem.setColaborador(buscarColaborador(request.getColaboradorId()));
     viagem.setMotivo(request.getMotivo());
     viagem.setDataSaida(request.getDataSaida());
     viagem.setDataRetorno(request.getDataRetorno());
@@ -62,5 +70,10 @@ public class ViagemService {
   private Destino buscarDestino(Long destinoId) {
     return destinoRepository.findById(destinoId)
         .orElseThrow(() -> new DestinoNotFoundException(destinoId));
+  }
+
+  private Colaborador buscarColaborador(Long colaboradorId) {
+    return colaboradorRepository.findById(colaboradorId)
+        .orElseThrow(() -> new ColaboradorNotFoundException(colaboradorId));
   }
 }

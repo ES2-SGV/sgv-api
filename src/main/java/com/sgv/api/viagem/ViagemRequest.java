@@ -11,6 +11,9 @@ public class ViagemRequest {
   @NotNull(message = "destino é obrigatório")
   private Long destinoId;
 
+  @NotNull(message = "colaborador é obrigatório")
+  private Long colaboradorId;
+
   @NotBlank(message = "motivo é obrigatório")
   private String motivo;
 
@@ -34,6 +37,14 @@ public class ViagemRequest {
 
   public void setDestinoId(Long destinoId) {
     this.destinoId = destinoId;
+  }
+
+  public Long getColaboradorId() {
+    return colaboradorId;
+  }
+
+  public void setColaboradorId(Long colaboradorId) {
+    this.colaboradorId = colaboradorId;
   }
 
   public String getMotivo() {

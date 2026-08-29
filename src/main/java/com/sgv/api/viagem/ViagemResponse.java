@@ -1,5 +1,6 @@
 package com.sgv.api.viagem;
 
+import com.sgv.api.colaborador.ColaboradorResponse;
 import com.sgv.api.destino.DestinoResponse;
 
 import java.time.LocalDate;
@@ -8,6 +9,7 @@ public class ViagemResponse {
 
   private Long id;
   private DestinoResponse destino;
+  private ColaboradorResponse colaborador;
   private String motivo;
   private LocalDate dataSaida;
   private LocalDate dataRetorno;
@@ -17,6 +19,7 @@ public class ViagemResponse {
   public ViagemResponse(Viagem viagem) {
     this.id = viagem.getId();
     this.destino = new DestinoResponse(viagem.getDestino());
+    this.colaborador = new ColaboradorResponse(viagem.getColaborador());
     this.motivo = viagem.getMotivo();
     this.dataSaida = viagem.getDataSaida();
     this.dataRetorno = viagem.getDataRetorno();
@@ -30,6 +33,10 @@ public class ViagemResponse {
 
   public DestinoResponse getDestino() {
     return destino;
+  }
+
+  public ColaboradorResponse getColaborador() {
+    return colaborador;
   }
 
   public String getMotivo() {

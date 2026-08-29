@@ -1,5 +1,8 @@
 package com.sgv.api.viagem;
 
+import com.sgv.api.colaborador.Colaborador;
+import com.sgv.api.colaborador.ColaboradorNotFoundException;
+import com.sgv.api.colaborador.ColaboradorRepository;
 import com.sgv.api.destino.Destino;
 import com.sgv.api.destino.DestinoNotFoundException;
 import com.sgv.api.destino.DestinoRepository;
@@ -30,19 +33,25 @@ class ViagemServiceTest {
   @Mock
   private DestinoRepository destinoRepository;
 
+  @Mock
+  private ColaboradorRepository colaboradorRepository;
+
   @InjectMocks
   private ViagemService service;
 
   private Destino destino;
+  private Colaborador colaborador;
 
   @BeforeEach
   void setUp() {
     destino = new Destino("Matriz SP", "São Paulo", "Brasil");
+    colaborador = new Colaborador("M-1001", "Ana Souza", "Comercial");
   }
 
   private ViagemRequest request() {
     ViagemRequest request = new ViagemRequest();
     request.setDestinoId(1L);
+    request.setColaboradorId(2L);
     request.setMotivo("Reunião com cliente");
     request.setDataSaida(LocalDate.of(2026, 9, 10));
     request.setDataRetorno(LocalDate.of(2026, 9, 12));
@@ -53,6 +62,7 @@ class ViagemServiceTest {
   @Test
   void createDeveSalvarViagemEmRascunho() {
     when(destinoRepository.findById(1L)).thenReturn(Optional.of(destino));
+    when(colaboradorRepository.findById(2L)).thenReturn(Optional.of(colaborador));
     when(repository.save(any(Viagem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     ViagemResponse response = service.create(request());
@@ -61,8 +71,10 @@ class ViagemServiceTest {
     verify(repository).save(captor.capture());
     assertThat(captor.getValue().getSituacao()).isEqualTo(SituacaoViagem.RASCUNHO);
     assertThat(captor.getValue().getDestino()).isSameAs(destino);
+    assertThat(captor.getValue().getColaborador()).isSameAs(colaborador);
     assertThat(response.getSituacao()).isEqualTo(SituacaoViagem.RASCUNHO);
     assertThat(response.getDestino().getNome()).isEqualTo("Matriz SP");
+    assertThat(response.getColaborador().getMatricula()).isEqualTo("M-1001");
   }
 
   @Test
@@ -71,6 +83,16 @@ class ViagemServiceTest {
 
     assertThatThrownBy(() -> service.create(request()))
         .isInstanceOf(DestinoNotFoundException.class);
+    verify(repository, never()).save(any());
+  }
+
+  @Test
+  void createComColaboradorInexistenteDeveLancarColaboradorNotFound() {
+    when(destinoRepository.findById(1L)).thenReturn(Optional.of(destino));
+    when(colaboradorRepository.findById(2L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.create(request()))
+        .isInstanceOf(ColaboradorNotFoundException.class);
     verify(repository, never()).save(any());
   }
 
@@ -85,10 +107,11 @@ class ViagemServiceTest {
 
   @Test
   void updateDeveAlterarCamposEPreservarSituacao() {
-    Viagem existente = new Viagem(destino, "Treinamento", LocalDate.of(2026, 9, 1),
+    Viagem existente = new Viagem(destino, colaborador, "Treinamento", LocalDate.of(2026, 9, 1),
         LocalDate.of(2026, 9, 2), MeioTransporte.RODOVIARIO, SituacaoViagem.APROVADA);
     when(repository.findById(1L)).thenReturn(Optional.of(existente));
     when(destinoRepository.findById(1L)).thenReturn(Optional.of(destino));
+    when(colaboradorRepository.findById(2L)).thenReturn(Optional.of(colaborador));
     when(repository.save(any(Viagem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     ViagemResponse response = service.update(1L, request());
