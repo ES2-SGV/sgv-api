@@ -4,7 +4,14 @@ Backend do Sistema de Gestão de Viagens (SGV). Spring Boot 4 + Java 21 + Postgr
 
 ## Rodar em dev
 
-Precisa do Postgres rodando em `localhost:5432` com o banco `sgv_db`.
+Precisa do Postgres rodando em `localhost:5432` com o banco `sgv_db` e os
+scripts de `db/` (pasta pai) já aplicados — são eles que criam os usuários e o
+schema. Guarde a senha do usuário `sgv_api` em `application-local.properties`
+(no `.gitignore`):
+
+```properties
+spring.datasource.password=a-senha-que-voce-definiu
+```
 
 ```bash
 ./mvnw spring-boot:run     # sobe em http://localhost:8080
@@ -32,8 +39,9 @@ override por variável de ambiente:
 | --- | --- |
 | `SERVER_PORT` | `8080` |
 | `DATASOURCE_URL` | `jdbc:postgresql://localhost:5432/sgv_db` |
-| `DATASOURCE_USERNAME` | `postgres` |
-| `DATASOURCE_PASSWORD` | `root` |
+| `DATASOURCE_USERNAME` | `sgv_api` |
+| `DATASOURCE_PASSWORD` | *(vazio — vem de `application-local.properties` ou do ambiente)* |
+| `JPA_DDL_AUTO` | `validate` |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` |
 
 ```bash
@@ -44,15 +52,14 @@ Portas do preview em Docker: ver `PORTS.md` na pasta pai (convenção: preview =
 
 ## Pontos críticos
 
-**`ddl-auto=update` cria o schema sozinho — e trava em coluna obrigatória nova.**
-Se você adicionar um campo `nullable = false` a uma entidade cuja tabela já tem
-linhas, a app não sobe: o Hibernate não tem valor para preencher as linhas
-existentes. Em dev, resolve dropando a tabela. Isso é o argumento para migrations
-(Flyway) numa sprint futura.
+**O schema não é mais criado pelo Hibernate.** Ele vem de `db/03-schema.sql`
+(pasta pai) e a app roda com `ddl-auto=validate`, porque o usuário `sgv_api` não
+tem permissão de DDL — ver `SEGURANCA-BD.md`. Mudou uma `@Entity`? Atualize o
+script e aplique com `sgv_migrator`, senão a app não sobe: o `validate` acusa a
+diferença no boot (o que é melhor do que descobrir em runtime).
 
 **`./mvnw test` escreve no banco de dev.** O `SgvApiApplicationTests` é
-`@SpringBootTest` e conecta no `sgv_db` real, aplicando o schema. Rodar os testes
-altera seu banco. Ainda não há perfil de teste isolado (H2 / Testcontainers).
+`@SpringBootTest` e conecta no `sgv_db` real. Rodar os testes altera seu banco. Ainda não há perfil de teste isolado (H2 / Testcontainers).
 
 **Padrão de recurso: um pacote por entidade**, com 7 arquivos —
 `Entity`, `Repository`, `Request`, `Response`, `Service`, `Controller`,
