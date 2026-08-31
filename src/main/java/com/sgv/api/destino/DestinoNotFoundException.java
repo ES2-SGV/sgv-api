@@ -1,6 +1,8 @@
 package com.sgv.api.destino;
 
-public class DestinoNotFoundException extends RuntimeException {
+import com.sgv.api.shared.NotFoundException;
+
+public class DestinoNotFoundException extends NotFoundException {
   public DestinoNotFoundException(Long id) {
     super("Destino não encontrado: " + id);
   }
