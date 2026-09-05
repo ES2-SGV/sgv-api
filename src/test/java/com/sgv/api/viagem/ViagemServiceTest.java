@@ -7,6 +7,7 @@ import com.sgv.api.colaborador.Cargo;
 import com.sgv.api.colaborador.Colaborador;
 import com.sgv.api.colaborador.ColaboradorNotFoundException;
 import com.sgv.api.colaborador.ColaboradorRepository;
+import com.sgv.api.colaborador.Lotacao;
 import com.sgv.api.destino.Destino;
 import com.sgv.api.destino.DestinoNotFoundException;
 import com.sgv.api.destino.DestinoRepository;
@@ -494,5 +495,93 @@ class ViagemServiceTest {
 
     assertThatThrownBy(() -> service.historico(99L))
         .isInstanceOf(ViagemNotFoundException.class);
+  }
+
+  // --- Lotação congelada na solicitação ---
+
+  @Test
+  void solicitarDeveCongelarALotacaoVigenteDoSolicitante() {
+    Viagem viagem = dadaViagem(SituacaoViagem.RASCUNHO);
+    when(atorService.resolver(SOLICITANTE_ID)).thenReturn(solicitante);
+    ecoarSave();
+
+    service.solicitar(1L, SOLICITANTE_ID);
+
+    assertThat(viagem.getLotacaoSolicitante()).isSameAs(solicitante.getLotacaoVigente());
+  }
+
+  @Test
+  void rascunhoNuncaSolicitadoNaoTemLotacaoCongelada() {
+    when(destinoRepository.findById(1L)).thenReturn(Optional.of(destino));
+    when(colaboradorRepository.findById(SOLICITANTE_ID)).thenReturn(Optional.of(solicitante));
+    ecoarSave();
+
+    service.create(request());
+
+    ArgumentCaptor<Viagem> captor = ArgumentCaptor.forClass(Viagem.class);
+    verify(repository).save(captor.capture());
+    assertThat(captor.getValue().getLotacaoSolicitante()).isNull();
+  }
+
+  @Test
+  void viagemSolicitadaDeveMostrarAAreaDeEntaoMesmoDepoisDaMudanca() {
+    Viagem viagem = dadaViagem(SituacaoViagem.RASCUNHO);
+    when(atorService.resolver(SOLICITANTE_ID)).thenReturn(solicitante);
+    ecoarSave();
+
+    // WILLIAN solicita trabalhando na área Comercial...
+    ViagemResponse naSolicitacao = service.solicitar(1L, SOLICITANTE_ID);
+    assertThat(naSolicitacao.getColaborador().getArea().getNome()).isEqualTo("Comercial");
+
+    // ...e depois muda para RH e é promovido.
+    solicitante.lotar(new Area("RH"), Cargo.GESTOR, LocalDateTime.of(2026, 9, 10, 8, 0));
+    assertThat(solicitante.getArea().getNome()).isEqualTo("RH");
+
+    // A viagem continua contando quem ele era quando pediu.
+    ViagemResponse depois = new ViagemResponse(viagem);
+    assertThat(depois.getColaborador().getArea().getNome()).isEqualTo("Comercial");
+    assertThat(depois.getColaborador().getCargo()).isEqualTo(Cargo.COLABORADOR);
+  }
+
+  @Test
+  void reenvioDepoisDeAjusteDeveRecongelarComALotacaoDoReenvio() {
+    Viagem viagem = dadaViagem(SituacaoViagem.RASCUNHO);
+    when(atorService.resolver(SOLICITANTE_ID)).thenReturn(solicitante);
+    when(atorService.exigirGestor(GESTOR_ID)).thenReturn(gestor);
+    ecoarSave();
+
+    service.solicitar(1L, SOLICITANTE_ID);
+    Lotacao noPrimeiroEnvio = viagem.getLotacaoSolicitante();
+
+    service.solicitarAjustes(1L, ajuste("faltou o orçamento"), GESTOR_ID);
+    solicitante.lotar(new Area("RH"), Cargo.COLABORADOR, LocalDateTime.of(2026, 9, 10, 8, 0));
+    service.solicitar(1L, SOLICITANTE_ID);
+
+    assertThat(viagem.getLotacaoSolicitante()).isNotSameAs(noPrimeiroEnvio);
+    assertThat(viagem.getLotacaoSolicitante().getArea().getNome()).isEqualTo("RH");
+  }
+
+  @Test
+  void rascunhoSemLotacaoCongeladaCaiNaVigente() {
+    ViagemResponse response = new ViagemResponse(viagem(SituacaoViagem.RASCUNHO));
+
+    assertThat(response.getColaborador().getArea().getNome()).isEqualTo("Comercial");
+  }
+
+  @Test
+  void historicoDeveCongelarACargoDeQuemAgiu() {
+    dadaViagem(SituacaoViagem.SOLICITADA);
+    when(atorService.exigirGestor(GESTOR_ID)).thenReturn(gestor);
+    ecoarSave();
+
+    service.aprovar(1L, GESTOR_ID);
+    ViagemHistorico registro = historicoSalvo();
+
+    // A gestora muda de área depois de aprovar.
+    gestor.lotar(new Area("RH"), Cargo.COLABORADOR, LocalDateTime.of(2026, 9, 10, 8, 0));
+
+    ViagemHistoricoResponse response = new ViagemHistoricoResponse(registro);
+    assertThat(response.getResponsavel().getArea().getNome()).isEqualTo("Comercial");
+    assertThat(response.getResponsavel().getCargo()).isEqualTo(Cargo.GESTOR);
   }
 }

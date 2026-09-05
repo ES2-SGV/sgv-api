@@ -2,6 +2,7 @@
 package com.sgv.api.viagem;
 
 import com.sgv.api.colaborador.Colaborador;
+import com.sgv.api.colaborador.Lotacao;
 import com.sgv.api.destino.Destino;
 import jakarta.persistence.*;
 
@@ -40,6 +41,17 @@ public class Viagem {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private SituacaoViagem situacao;
+
+  /**
+   * A lotação do solicitante no instante em que a viagem foi solicitada.
+   * Nula enquanto ela nunca saiu de RASCUNHO — rascunho não é solicitação.
+   * A linha apontada nunca tem área nem cargo alterados (só ganha `fim`), e é
+   * isso que faz esta viagem continuar dizendo a verdade depois de a pessoa
+   * mudar de área.
+   */
+  @ManyToOne
+  @JoinColumn(name = "lotacao_id")
+  private Lotacao lotacaoSolicitante;
 
   /** O que o gestor pediu para ajustar. Preenchido só enquanto EM_AJUSTE. */
   @Column(name = "motivo_ajuste", length = 500)
@@ -117,6 +129,14 @@ public class Viagem {
 
   public void setSituacao(SituacaoViagem situacao) {
     this.situacao = situacao;
+  }
+
+  public Lotacao getLotacaoSolicitante() {
+    return this.lotacaoSolicitante;
+  }
+
+  public void setLotacaoSolicitante(Lotacao lotacaoSolicitante) {
+    this.lotacaoSolicitante = lotacaoSolicitante;
   }
 
   public String getMotivoAjuste() {

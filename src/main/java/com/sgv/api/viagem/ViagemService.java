@@ -86,6 +86,9 @@ public class ViagemService {
     Colaborador ator = exigirSolicitante(viagem, atorId);
     exigirSituacao(viagem, "solicitar", SituacaoViagem.RASCUNHO, SituacaoViagem.EM_AJUSTE);
     viagem.setSituacao(SituacaoViagem.SOLICITADA);
+    // Congela área e cargo de agora. No reenvio depois de um ajuste, vale a
+    // lotação do reenvio: é essa a solicitação que o gestor vai avaliar.
+    viagem.setLotacaoSolicitante(ator.getLotacaoVigente());
     // O pedido de ajuste morre aqui: ou foi atendido, ou o solicitante decidiu
     // reenviar assim mesmo. Manter o texto daria a entender que ainda vale — e
     // o que foi pedido continua no histórico.

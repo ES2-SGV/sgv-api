@@ -15,7 +15,9 @@ public class ViagemHistoricoResponse {
   public ViagemHistoricoResponse(ViagemHistorico historico) {
     this.id = historico.getId();
     this.situacao = historico.getSituacao();
-    this.responsavel = new ColaboradorResponse(historico.getResponsavel());
+    // Quem ele era ao agir, não quem é hoje.
+    this.responsavel = new ColaboradorResponse(
+        historico.getResponsavel(), historico.getLotacaoResponsavel());
     this.registradoEm = historico.getRegistradoEm();
     this.observacao = historico.getObservacao();
   }

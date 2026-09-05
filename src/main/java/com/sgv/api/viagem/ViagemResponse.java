@@ -20,7 +20,10 @@ public class ViagemResponse {
   public ViagemResponse(Viagem viagem) {
     this.id = viagem.getId();
     this.destino = new DestinoResponse(viagem.getDestino());
-    this.colaborador = new ColaboradorResponse(viagem.getColaborador());
+    // Não é o colaborador de hoje: é quem ele era quando solicitou. Em
+    // RASCUNHO ainda não há lotação congelada, e aí vale a vigente.
+    this.colaborador =
+        new ColaboradorResponse(viagem.getColaborador(), viagem.getLotacaoSolicitante());
     this.motivo = viagem.getMotivo();
     this.dataSaida = viagem.getDataSaida();
     this.dataRetorno = viagem.getDataRetorno();
