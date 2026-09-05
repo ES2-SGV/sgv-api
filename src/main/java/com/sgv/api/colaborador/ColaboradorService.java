@@ -1,5 +1,8 @@
 package com.sgv.api.colaborador;
 
+import com.sgv.api.area.Area;
+import com.sgv.api.area.AreaNotFoundException;
+import com.sgv.api.area.AreaRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -7,9 +10,11 @@ import java.util.List;
 public class ColaboradorService {
 
   private final ColaboradorRepository repository;
+  private final AreaRepository areaRepository;
 
-  public ColaboradorService(ColaboradorRepository repository) {
+  public ColaboradorService(ColaboradorRepository repository, AreaRepository areaRepository) {
     this.repository = repository;
+    this.areaRepository = areaRepository;
   }
 
   public List<ColaboradorResponse> findAll() {
@@ -28,7 +33,8 @@ public class ColaboradorService {
     if (repository.existsByMatricula(request.getMatricula())) {
       throw new MatriculaJaCadastradaException(request.getMatricula());
     }
-    Colaborador colaborador = new Colaborador(request.getMatricula(), request.getNome(), request.getArea());
+    Colaborador colaborador = new Colaborador(request.getMatricula(), request.getNome(),
+        buscarArea(request.getAreaId()));
     return new ColaboradorResponse(repository.save(colaborador));
   }
 
@@ -40,7 +46,7 @@ public class ColaboradorService {
     }
     colaborador.setMatricula(request.getMatricula());
     colaborador.setNome(request.getNome());
-    colaborador.setArea(request.getArea());
+    colaborador.setArea(buscarArea(request.getAreaId()));
     return new ColaboradorResponse(repository.save(colaborador));
   }
 
@@ -49,5 +55,10 @@ public class ColaboradorService {
       throw new ColaboradorNotFoundException(id);
     }
     repository.deleteById(id);
+  }
+
+  private Area buscarArea(Long areaId) {
+    return areaRepository.findById(areaId)
+        .orElseThrow(() -> new AreaNotFoundException(areaId));
   }
 }

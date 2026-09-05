@@ -1,17 +1,19 @@
 package com.sgv.api.colaborador;
 
+import com.sgv.api.area.AreaResponse;
+
 public class ColaboradorResponse {
 
   private Long id;
   private String matricula;
   private String nome;
-  private String area;
+  private AreaResponse area;
 
   public ColaboradorResponse(Colaborador colaborador) {
     this.id = colaborador.getId();
     this.matricula = colaborador.getMatricula();
     this.nome = colaborador.getNome();
-    this.area = colaborador.getArea();
+    this.area = new AreaResponse(colaborador.getArea());
   }
 
   public Long getId() {
@@ -26,7 +28,7 @@ public class ColaboradorResponse {
     return nome;
   }
 
-  public String getArea() {
+  public AreaResponse getArea() {
     return area;
   }
 }

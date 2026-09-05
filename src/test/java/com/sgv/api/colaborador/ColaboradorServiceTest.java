@@ -1,5 +1,8 @@
 package com.sgv.api.colaborador;
 
+import com.sgv.api.area.Area;
+import com.sgv.api.area.AreaNotFoundException;
+import com.sgv.api.area.AreaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +24,9 @@ class ColaboradorServiceTest {
   @Mock
   private ColaboradorRepository repository;
 
+  @Mock
+  private AreaRepository areaRepository;
+
   @InjectMocks
   private ColaboradorService service;
 
@@ -28,19 +34,35 @@ class ColaboradorServiceTest {
     ColaboradorRequest request = new ColaboradorRequest();
     request.setMatricula("M-1001");
     request.setNome("Ana Souza");
-    request.setArea("Comercial");
+    request.setAreaId(1L);
     return request;
+  }
+
+  private void areaComercialExiste() {
+    when(areaRepository.findById(1L)).thenReturn(Optional.of(new Area("Comercial")));
   }
 
   @Test
   void createDeveSalvarERetornarResponse() {
     when(repository.existsByMatricula("M-1001")).thenReturn(false);
+    areaComercialExiste();
     when(repository.save(any(Colaborador.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     ColaboradorResponse response = service.create(request());
 
     assertThat(response.getMatricula()).isEqualTo("M-1001");
-    assertThat(response.getArea()).isEqualTo("Comercial");
+    assertThat(response.getArea().getNome()).isEqualTo("Comercial");
+  }
+
+  @Test
+  void createComAreaInexistenteDeveLancarAreaNotFound() {
+    when(repository.existsByMatricula("M-1001")).thenReturn(false);
+    when(areaRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.create(request()))
+        .isInstanceOf(AreaNotFoundException.class)
+        .hasMessageContaining("1");
+    verify(repository, never()).save(any());
   }
 
   @Test
@@ -55,20 +77,21 @@ class ColaboradorServiceTest {
 
   @Test
   void updateMantendoPropriaMatriculaNaoDeveConflitar() {
-    Colaborador existente = new Colaborador("M-1001", "Ana", "Financeiro");
+    Colaborador existente = new Colaborador("M-1001", "Ana", new Area("Financeiro"));
     when(repository.findById(1L)).thenReturn(Optional.of(existente));
     when(repository.existsByMatriculaAndIdNot("M-1001", 1L)).thenReturn(false);
+    areaComercialExiste();
     when(repository.save(any(Colaborador.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     ColaboradorResponse response = service.update(1L, request());
 
     assertThat(response.getNome()).isEqualTo("Ana Souza");
-    assertThat(response.getArea()).isEqualTo("Comercial");
+    assertThat(response.getArea().getNome()).isEqualTo("Comercial");
   }
 
   @Test
   void updateComMatriculaDeOutroColaboradorDeveLancarConflito() {
-    when(repository.findById(1L)).thenReturn(Optional.of(new Colaborador("M-2002", "Ana", "Financeiro")));
+    when(repository.findById(1L)).thenReturn(Optional.of(new Colaborador("M-2002", "Ana", new Area("Financeiro"))));
     when(repository.existsByMatriculaAndIdNot("M-1001", 1L)).thenReturn(true);
 
     assertThatThrownBy(() -> service.update(1L, request()))

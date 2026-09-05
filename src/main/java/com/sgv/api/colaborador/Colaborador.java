@@ -1,6 +1,7 @@
 //Entity
 package com.sgv.api.colaborador;
 
+import com.sgv.api.area.Area;
 import jakarta.persistence.*;
 
 @Entity
@@ -18,13 +19,14 @@ public class Colaborador {
   @Column(nullable = false)
   private String nome;
 
-  @Column(nullable = false)
-  private String area;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "area_id", nullable = false)
+  private Area area;
 
   public Colaborador() {
   }
 
-  public Colaborador(String matricula, String nome, String area) {
+  public Colaborador(String matricula, String nome, Area area) {
     this.matricula = matricula;
     this.nome = nome;
     this.area = area;
@@ -50,11 +52,11 @@ public class Colaborador {
     this.nome = nome;
   }
 
-  public String getArea() {
+  public Area getArea() {
     return this.area;
   }
 
-  public void setArea(String area) {
+  public void setArea(Area area) {
     this.area = area;
   }
 

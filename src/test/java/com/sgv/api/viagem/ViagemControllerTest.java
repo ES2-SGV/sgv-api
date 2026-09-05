@@ -1,5 +1,6 @@
 package com.sgv.api.viagem;
 
+import com.sgv.api.area.Area;
 import com.sgv.api.colaborador.Colaborador;
 import com.sgv.api.destino.Destino;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ class ViagemControllerTest {
 
   private ViagemResponse response() {
     Destino destino = new Destino("Matriz SP", "São Paulo", "Brasil");
-    Colaborador colaborador = new Colaborador("M-1001", "Ana Souza", "Comercial");
+    Colaborador colaborador = new Colaborador("M-1001", "Ana Souza", new Area("Comercial"));
     Viagem viagem = new Viagem(destino, colaborador, "Reunião com cliente", LocalDate.of(2026, 9, 10),
         LocalDate.of(2026, 9, 12), MeioTransporte.AEREO, SituacaoViagem.RASCUNHO);
     return new ViagemResponse(viagem);

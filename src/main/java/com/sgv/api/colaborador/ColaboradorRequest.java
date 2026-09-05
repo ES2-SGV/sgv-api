@@ -1,6 +1,7 @@
 package com.sgv.api.colaborador;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class ColaboradorRequest {
 
@@ -10,8 +11,8 @@ public class ColaboradorRequest {
   @NotBlank(message = "nome é obrigatório")
   private String nome;
 
-  @NotBlank(message = "área é obrigatória")
-  private String area;
+  @NotNull(message = "área é obrigatória")
+  private Long areaId;
 
   public String getMatricula() {
     return matricula;
@@ -29,11 +30,11 @@ public class ColaboradorRequest {
     this.nome = nome;
   }
 
-  public String getArea() {
-    return area;
+  public Long getAreaId() {
+    return areaId;
   }
 
-  public void setArea(String area) {
-    this.area = area;
+  public void setAreaId(Long areaId) {
+    this.areaId = areaId;
   }
 }

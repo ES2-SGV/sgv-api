@@ -1,5 +1,6 @@
 package com.sgv.api.viagem;
 
+import com.sgv.api.area.Area;
 import com.sgv.api.colaborador.Colaborador;
 import com.sgv.api.colaborador.ColaboradorNotFoundException;
 import com.sgv.api.colaborador.ColaboradorRepository;
@@ -45,7 +46,7 @@ class ViagemServiceTest {
   @BeforeEach
   void setUp() {
     destino = new Destino("Matriz SP", "São Paulo", "Brasil");
-    colaborador = new Colaborador("M-1001", "Ana Souza", "Comercial");
+    colaborador = new Colaborador("M-1001", "Ana Souza", new Area("Comercial"));
   }
 
   private ViagemRequest request() {

@@ -1,5 +1,7 @@
 package com.sgv.api.colaborador;
 
+import com.sgv.api.area.Area;
+import com.sgv.api.area.AreaNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -27,7 +29,7 @@ class ColaboradorControllerTest {
   private ColaboradorService service;
 
   private ColaboradorResponse response() {
-    return new ColaboradorResponse(new Colaborador("M-1001", "Ana Souza", "Comercial"));
+    return new ColaboradorResponse(new Colaborador("M-1001", "Ana Souza", new Area("Comercial")));
   }
 
   private String payload(String matricula) {
@@ -35,7 +37,7 @@ class ColaboradorControllerTest {
         {
           "matricula": "%s",
           "nome": "Ana Souza",
-          "area": "Comercial"
+          "areaId": 1
         }
         """.formatted(matricula);
   }
@@ -47,7 +49,7 @@ class ColaboradorControllerTest {
     mockMvc.perform(get("/colaboradores"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].matricula").value("M-1001"))
-        .andExpect(jsonPath("$[0].area").value("Comercial"));
+        .andExpect(jsonPath("$[0].area.nome").value("Comercial"));
   }
 
   @Test
@@ -68,6 +70,31 @@ class ColaboradorControllerTest {
         .content(payload("  ")))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.campos.matricula").value("matrícula é obrigatória"));
+  }
+
+  @Test
+  void createSemAreaDeveRetornar400() throws Exception {
+    mockMvc.perform(post("/colaboradores")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+            {
+              "matricula": "M-1001",
+              "nome": "Ana Souza"
+            }
+            """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.campos.areaId").value("área é obrigatória"));
+  }
+
+  @Test
+  void createComAreaInexistenteDeveRetornar404() throws Exception {
+    when(service.create(any(ColaboradorRequest.class))).thenThrow(new AreaNotFoundException(1L));
+
+    mockMvc.perform(post("/colaboradores")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(payload("M-1001")))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value("Área não encontrada: 1"));
   }
 
   @Test
