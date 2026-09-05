@@ -7,6 +7,4 @@ public interface ColaboradorRepository extends JpaRepository<Colaborador, Long> 
   boolean existsByMatricula(String matricula);
 
   boolean existsByMatriculaAndIdNot(String matricula, Long id);
-
-  boolean existsByAreaId(Long areaId);
 }

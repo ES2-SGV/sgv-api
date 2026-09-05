@@ -4,7 +4,9 @@ import com.sgv.api.area.Area;
 import com.sgv.api.area.AreaNotFoundException;
 import com.sgv.api.area.AreaRepository;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ColaboradorService {
@@ -34,7 +36,7 @@ public class ColaboradorService {
       throw new MatriculaJaCadastradaException(request.getMatricula());
     }
     Colaborador colaborador = new Colaborador(request.getMatricula(), request.getNome(),
-        buscarArea(request.getAreaId()), request.getCargo());
+        buscarArea(request.getAreaId()), request.getCargo(), LocalDateTime.now());
     return new ColaboradorResponse(repository.save(colaborador));
   }
 
@@ -46,8 +48,7 @@ public class ColaboradorService {
     }
     colaborador.setMatricula(request.getMatricula());
     colaborador.setNome(request.getNome());
-    colaborador.setArea(buscarArea(request.getAreaId()));
-    colaborador.setCargo(request.getCargo());
+    relotarSeMudou(colaborador, buscarArea(request.getAreaId()), request.getCargo());
     return new ColaboradorResponse(repository.save(colaborador));
   }
 
@@ -56,6 +57,24 @@ public class ColaboradorService {
       throw new ColaboradorNotFoundException(id);
     }
     repository.deleteById(id);
+  }
+
+  public List<LotacaoResponse> lotacoes(Long id) {
+    Colaborador colaborador = repository.findById(id)
+        .orElseThrow(() -> new ColaboradorNotFoundException(id));
+    return colaborador.getLotacoes().stream().map(LotacaoResponse::new).toList();
+  }
+
+  /**
+   * Mudar de área ou de cargo fecha a lotação atual e abre outra. Reenviar os
+   * mesmos valores não gera linha nova — senão o histórico encheria de ruído a
+   * cada edição de nome.
+   */
+  private void relotarSeMudou(Colaborador colaborador, Area area, Cargo cargo) {
+    Lotacao vigente = colaborador.getLotacaoVigente();
+    if (!Objects.equals(vigente.getArea().getId(), area.getId()) || vigente.getCargo() != cargo) {
+      colaborador.lotar(area, cargo, LocalDateTime.now());
+    }
   }
 
   private Area buscarArea(Long areaId) {

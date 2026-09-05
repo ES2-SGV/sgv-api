@@ -8,7 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -118,5 +121,73 @@ class ColaboradorServiceTest {
     assertThatThrownBy(() -> service.delete(99L))
         .isInstanceOf(ColaboradorNotFoundException.class);
     verify(repository, never()).deleteById(any());
+  }
+
+  // --- Lotação ---
+
+  @Test
+  void updateMudandoDeAreaDeveFecharALotacaoAtualEAbrirOutra() {
+    Area rh = new Area("RH");
+    ReflectionTestUtils.setField(rh, "id", 9L);
+    Colaborador existente = new Colaborador("1001-2", "Ana", areaComId(1L, "Comercial"),
+        Cargo.COLABORADOR, LocalDateTime.of(2026, 9, 1, 8, 0));
+    when(repository.findById(1L)).thenReturn(Optional.of(existente));
+    when(repository.existsByMatriculaAndIdNot("1001-2", 1L)).thenReturn(false);
+    when(areaRepository.findById(1L)).thenReturn(Optional.of(rh));
+    when(repository.save(any(Colaborador.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    ColaboradorResponse response = service.update(1L, request());
+
+    assertThat(existente.getLotacoes()).hasSize(2);
+    assertThat(existente.getLotacoes().get(0).getFim()).isNotNull();
+    assertThat(response.getArea().getNome()).isEqualTo("RH");
+    assertThat(response.getCargo()).isEqualTo(Cargo.GESTOR);
+  }
+
+  @Test
+  void updateSemMudarAreaNemCargoNaoDeveCriarLotacaoNova() {
+    Area comercial = areaComId(1L, "Comercial");
+    Colaborador existente = new Colaborador("1001-2", "Ana", comercial, Cargo.GESTOR,
+        LocalDateTime.of(2026, 9, 1, 8, 0));
+    when(repository.findById(1L)).thenReturn(Optional.of(existente));
+    when(repository.existsByMatriculaAndIdNot("1001-2", 1L)).thenReturn(false);
+    when(areaRepository.findById(1L)).thenReturn(Optional.of(comercial));
+    when(repository.save(any(Colaborador.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    service.update(1L, request());
+
+    assertThat(existente.getLotacoes()).hasSize(1);
+    assertThat(existente.getLotacaoVigente().getFim()).isNull();
+  }
+
+  @Test
+  void lotacoesDeveDevolverOHistoricoEmOrdem() {
+    Colaborador ana = new Colaborador("1001-2", "Ana", areaComId(1L, "Comercial"),
+        Cargo.COLABORADOR, LocalDateTime.of(2026, 9, 1, 8, 0));
+    ana.lotar(areaComId(9L, "RH"), Cargo.GESTOR, LocalDateTime.of(2026, 9, 10, 8, 0));
+    when(repository.findById(1L)).thenReturn(Optional.of(ana));
+
+    List<LotacaoResponse> lotacoes = service.lotacoes(1L);
+
+    assertThat(lotacoes).hasSize(2);
+    assertThat(lotacoes.get(0).getArea().getNome()).isEqualTo("Comercial");
+    assertThat(lotacoes.get(0).getFim()).isEqualTo(LocalDateTime.of(2026, 9, 10, 8, 0));
+    assertThat(lotacoes.get(1).getArea().getNome()).isEqualTo("RH");
+    assertThat(lotacoes.get(1).getCargo()).isEqualTo(Cargo.GESTOR);
+    assertThat(lotacoes.get(1).getFim()).isNull();
+  }
+
+  @Test
+  void lotacoesDeColaboradorInexistenteDeveLancarNotFound() {
+    when(repository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.lotacoes(99L))
+        .isInstanceOf(ColaboradorNotFoundException.class);
+  }
+
+  private Area areaComId(long id, String nome) {
+    Area area = new Area(nome);
+    ReflectionTestUtils.setField(area, "id", id);
+    return area;
   }
 }

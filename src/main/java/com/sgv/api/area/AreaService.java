@@ -1,6 +1,6 @@
 package com.sgv.api.area;
 
-import com.sgv.api.colaborador.ColaboradorRepository;
+import com.sgv.api.colaborador.LotacaoRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -8,11 +8,11 @@ import java.util.List;
 public class AreaService {
 
   private final AreaRepository repository;
-  private final ColaboradorRepository colaboradorRepository;
+  private final LotacaoRepository lotacaoRepository;
 
-  public AreaService(AreaRepository repository, ColaboradorRepository colaboradorRepository) {
+  public AreaService(AreaRepository repository, LotacaoRepository lotacaoRepository) {
     this.repository = repository;
-    this.colaboradorRepository = colaboradorRepository;
+    this.lotacaoRepository = lotacaoRepository;
   }
 
   public List<AreaResponse> findAll() {
@@ -48,8 +48,9 @@ public class AreaService {
     if (!repository.existsById(id)) {
       throw new AreaNotFoundException(id);
     }
-    // A FK de colaborador já barraria no banco, mas aí o erro chegaria como 500.
-    if (colaboradorRepository.existsByAreaId(id)) {
+    // Vale para lotação encerrada também: apagar a área apagaria o passado de
+    // quem já trabalhou nela. A FK barraria no banco, mas como 500.
+    if (lotacaoRepository.existsByAreaId(id)) {
       throw new AreaEmUsoException(id);
     }
     repository.deleteById(id);

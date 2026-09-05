@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -163,5 +164,23 @@ class ColaboradorControllerTest {
     mockMvc.perform(get("/colaboradores/99"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").value("Colaborador não encontrado: 99"));
+  }
+
+  @Test
+  void lotacoesDeveRetornarOHistoricoDeAreaECargo() throws Exception {
+    Colaborador ana = new Colaborador("1001-2", "Ana", new Area("INFORMATICA"),
+        Cargo.COLABORADOR, LocalDateTime.of(2026, 9, 1, 8, 0));
+    ana.lotar(new Area("RH"), Cargo.GESTOR, LocalDateTime.of(2026, 9, 10, 8, 0));
+    when(service.lotacoes(eq(1L)))
+        .thenReturn(ana.getLotacoes().stream().map(LotacaoResponse::new).toList());
+
+    mockMvc.perform(get("/colaboradores/1/lotacoes"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].area.nome").value("INFORMATICA"))
+        .andExpect(jsonPath("$[0].cargo").value("COLABORADOR"))
+        .andExpect(jsonPath("$[0].fim").value("2026-09-10T08:00:00"))
+        .andExpect(jsonPath("$[1].area.nome").value("RH"))
+        .andExpect(jsonPath("$[1].cargo").value("GESTOR"))
+        .andExpect(jsonPath("$[1].fim").doesNotExist());
   }
 }

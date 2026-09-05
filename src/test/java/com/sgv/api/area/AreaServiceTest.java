@@ -1,6 +1,6 @@
 package com.sgv.api.area;
 
-import com.sgv.api.colaborador.ColaboradorRepository;
+import com.sgv.api.colaborador.LotacaoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,7 +23,7 @@ class AreaServiceTest {
   private AreaRepository repository;
 
   @Mock
-  private ColaboradorRepository colaboradorRepository;
+  private LotacaoRepository lotacaoRepository;
 
   @InjectMocks
   private AreaService service;
@@ -94,9 +94,9 @@ class AreaServiceTest {
   }
 
   @Test
-  void deleteComColaboradorVinculadoDeveLancarConflito() {
+  void deleteComLotacaoVinculadaDeveLancarConflito() {
     when(repository.existsById(1L)).thenReturn(true);
-    when(colaboradorRepository.existsByAreaId(1L)).thenReturn(true);
+    when(lotacaoRepository.existsByAreaId(1L)).thenReturn(true);
 
     assertThatThrownBy(() -> service.delete(1L))
         .isInstanceOf(AreaEmUsoException.class);
@@ -104,9 +104,9 @@ class AreaServiceTest {
   }
 
   @Test
-  void deleteSemColaboradorVinculadoDeveApagar() {
+  void deleteSemLotacaoVinculadaDeveApagar() {
     when(repository.existsById(1L)).thenReturn(true);
-    when(colaboradorRepository.existsByAreaId(1L)).thenReturn(false);
+    when(lotacaoRepository.existsByAreaId(1L)).thenReturn(false);
 
     service.delete(1L);
 

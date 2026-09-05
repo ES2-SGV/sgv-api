@@ -25,6 +25,11 @@ public class ColaboradorController {
     return service.findById(id);
   }
 
+  @GetMapping("/{id}/lotacoes")
+  public List<LotacaoResponse> lotacoes(@PathVariable Long id) {
+    return service.lotacoes(id);
+  }
+
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public ColaboradorResponse create(@Valid @RequestBody ColaboradorRequest request) {
