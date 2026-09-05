@@ -71,14 +71,20 @@ class ColaboradorControllerTest {
   void createSemMatriculaDeveRetornar400() throws Exception {
     mockMvc.perform(post("/colaboradores")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(payload("  ")))
+        .content("""
+            {
+              "nome": "Ana Souza",
+              "areaId": 1,
+              "cargo": "GESTOR"
+            }
+            """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.campos.matricula").value("matrícula é obrigatória"));
   }
 
   @Test
   void createComMatriculaForaDoFormatoDeveRetornar400() throws Exception {
-    for (String invalida : List.of("M-1001", "1001", "10012", "1001-", "12345-6", "abcd-1", "1001-23")) {
+    for (String invalida : List.of("M-1001", "1001", "10012", "1001-", "12345-6", "abcd-1", "1001-23", "  ", "")) {
       mockMvc.perform(post("/colaboradores")
           .contentType(MediaType.APPLICATION_JSON)
           .content(payload(invalida)))
@@ -140,6 +146,14 @@ class ColaboradorControllerTest {
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.status").value(409))
         .andExpect(jsonPath("$.message").value("Matrícula já cadastrada: 1001-2"));
+  }
+
+  @Test
+  void idNaoNumericoDeveRetornar400ComApiError() throws Exception {
+    mockMvc.perform(get("/colaboradores/abc"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.message").value("valor inválido para id: abc"));
   }
 
   @Test

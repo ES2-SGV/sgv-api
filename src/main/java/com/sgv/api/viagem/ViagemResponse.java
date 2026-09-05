@@ -15,6 +15,7 @@ public class ViagemResponse {
   private LocalDate dataRetorno;
   private MeioTransporte meioTransporte;
   private SituacaoViagem situacao;
+  private String motivoAjuste;
 
   public ViagemResponse(Viagem viagem) {
     this.id = viagem.getId();
@@ -25,6 +26,7 @@ public class ViagemResponse {
     this.dataRetorno = viagem.getDataRetorno();
     this.meioTransporte = viagem.getMeioTransporte();
     this.situacao = viagem.getSituacao();
+    this.motivoAjuste = viagem.getMotivoAjuste();
   }
 
   public Long getId() {
@@ -57,5 +59,9 @@ public class ViagemResponse {
 
   public SituacaoViagem getSituacao() {
     return situacao;
+  }
+
+  public String getMotivoAjuste() {
+    return motivoAjuste;
   }
 }

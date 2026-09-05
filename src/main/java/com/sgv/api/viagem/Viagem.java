@@ -41,6 +41,10 @@ public class Viagem {
   @Column(nullable = false)
   private SituacaoViagem situacao;
 
+  /** O que o gestor pediu para ajustar. Preenchido só enquanto EM_AJUSTE. */
+  @Column(name = "motivo_ajuste", length = 500)
+  private String motivoAjuste;
+
   public Viagem() {
   }
 
@@ -113,6 +117,14 @@ public class Viagem {
 
   public void setSituacao(SituacaoViagem situacao) {
     this.situacao = situacao;
+  }
+
+  public String getMotivoAjuste() {
+    return this.motivoAjuste;
+  }
+
+  public void setMotivoAjuste(String motivoAjuste) {
+    this.motivoAjuste = motivoAjuste;
   }
 
 }

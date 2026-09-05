@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 
 public class ColaboradorRequest {
 
-  @NotBlank(message = "matrícula é obrigatória")
+  @NotNull(message = "matrícula é obrigatória")
   @Pattern(regexp = "\\d{4}-\\d", message = "matrícula deve estar no formato XXXX-X (somente dígitos)")
   private String matricula;
 
