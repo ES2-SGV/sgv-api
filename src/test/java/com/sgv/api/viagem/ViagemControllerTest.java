@@ -14,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -230,5 +231,33 @@ class ViagemControllerTest {
             """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("corpo da requisição inválido"));
+  }
+
+  @Test
+  void historicoDeveRetornarOsRegistrosDaViagem() throws Exception {
+    Colaborador gestor = new Colaborador("3003-4", "Bia", new Area("Comercial"), Cargo.GESTOR);
+    Viagem viagem = new Viagem(new Destino("Matriz SP", "São Paulo", "Brasil"),
+        new Colaborador("1001-2", "Ana Souza", new Area("Comercial"), Cargo.COLABORADOR),
+        "Reunião", LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 12),
+        MeioTransporte.AEREO, SituacaoViagem.EM_AJUSTE);
+    when(service.historico(eq(1L))).thenReturn(List.of(new ViagemHistoricoResponse(
+        new ViagemHistorico(viagem, gestor, LocalDateTime.of(2026, 9, 2, 10, 0),
+            "faltou o orçamento"))));
+
+    mockMvc.perform(get("/viagens/1/historico"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].situacao").value("EM_AJUSTE"))
+        .andExpect(jsonPath("$[0].responsavel.matricula").value("3003-4"))
+        .andExpect(jsonPath("$[0].responsavel.cargo").value("GESTOR"))
+        .andExpect(jsonPath("$[0].registradoEm").value("2026-09-02T10:00:00"))
+        .andExpect(jsonPath("$[0].observacao").value("faltou o orçamento"));
+  }
+
+  @Test
+  void historicoDeViagemInexistenteDeveRetornar404() throws Exception {
+    when(service.historico(eq(99L))).thenThrow(new ViagemNotFoundException(99L));
+
+    mockMvc.perform(get("/viagens/99/historico"))
+        .andExpect(status().isNotFound());
   }
 }

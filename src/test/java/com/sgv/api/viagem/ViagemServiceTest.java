@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +40,9 @@ class ViagemServiceTest {
 
   @Mock
   private ViagemRepository repository;
+
+  @Mock
+  private ViagemHistoricoRepository historicoRepository;
 
   @Mock
   private DestinoRepository destinoRepository;
@@ -89,6 +93,13 @@ class ViagemServiceTest {
     when(repository.save(any(Viagem.class))).thenAnswer(invocation -> invocation.getArgument(0));
   }
 
+  /** O último registro de histórico que o serviço mandou salvar. */
+  private ViagemHistorico historicoSalvo() {
+    ArgumentCaptor<ViagemHistorico> captor = ArgumentCaptor.forClass(ViagemHistorico.class);
+    verify(historicoRepository, org.mockito.Mockito.atLeastOnce()).save(captor.capture());
+    return captor.getValue();
+  }
+
   private ViagemRequest request() {
     ViagemRequest request = new ViagemRequest();
     request.setDestinoId(1L);
@@ -121,6 +132,8 @@ class ViagemServiceTest {
     assertThat(captor.getValue().getSituacao()).isEqualTo(SituacaoViagem.RASCUNHO);
     assertThat(response.getSituacao()).isEqualTo(SituacaoViagem.RASCUNHO);
     assertThat(response.getDestino().getNome()).isEqualTo("Matriz SP");
+    assertThat(historicoSalvo().getSituacao()).isEqualTo(SituacaoViagem.RASCUNHO);
+    assertThat(historicoSalvo().getResponsavel()).isSameAs(solicitante);
   }
 
   @Test
@@ -402,5 +415,84 @@ class ViagemServiceTest {
         .isEqualTo(SituacaoViagem.SOLICITADA);
     assertThat(viagem.getMotivoAjuste()).isNull();
     assertThat(service.aprovar(1L, GESTOR_ID).getSituacao()).isEqualTo(SituacaoViagem.APROVADA);
+  }
+
+  // --- Histórico ---
+
+  @Test
+  void solicitarDeveRegistrarQuemESituacao() {
+    dadaViagem(SituacaoViagem.RASCUNHO);
+    when(atorService.resolver(SOLICITANTE_ID)).thenReturn(solicitante);
+    ecoarSave();
+
+    service.solicitar(1L, SOLICITANTE_ID);
+
+    ViagemHistorico registro = historicoSalvo();
+    assertThat(registro.getSituacao()).isEqualTo(SituacaoViagem.SOLICITADA);
+    assertThat(registro.getResponsavel()).isSameAs(solicitante);
+    assertThat(registro.getObservacao()).isNull();
+    assertThat(registro.getRegistradoEm()).isNotNull();
+  }
+
+  @Test
+  void solicitarAjustesDeveGuardarOMotivoNoHistorico() {
+    dadaViagem(SituacaoViagem.SOLICITADA);
+    when(atorService.exigirGestor(GESTOR_ID)).thenReturn(gestor);
+    ecoarSave();
+
+    service.solicitarAjustes(1L, ajuste("faltou o orçamento"), GESTOR_ID);
+
+    ViagemHistorico registro = historicoSalvo();
+    assertThat(registro.getSituacao()).isEqualTo(SituacaoViagem.EM_AJUSTE);
+    assertThat(registro.getResponsavel()).isSameAs(gestor);
+    assertThat(registro.getObservacao()).isEqualTo("faltou o orçamento");
+  }
+
+  @Test
+  void aprovarDeveRegistrarOGestorComoResponsavel() {
+    dadaViagem(SituacaoViagem.SOLICITADA);
+    when(atorService.exigirGestor(GESTOR_ID)).thenReturn(gestor);
+    ecoarSave();
+
+    service.aprovar(1L, GESTOR_ID);
+
+    assertThat(historicoSalvo().getResponsavel()).isSameAs(gestor);
+    assertThat(historicoSalvo().getSituacao()).isEqualTo(SituacaoViagem.APROVADA);
+  }
+
+  @Test
+  void transicaoRecusadaNaoDeveRegistrarNada() {
+    dadaViagem(SituacaoViagem.APROVADA);
+    when(atorService.resolver(SOLICITANTE_ID)).thenReturn(solicitante);
+
+    assertThatThrownBy(() -> service.solicitar(1L, SOLICITANTE_ID))
+        .isInstanceOf(TransicaoInvalidaException.class);
+    verify(historicoRepository, never()).save(any());
+  }
+
+  @Test
+  void historicoDeveVirEmOrdemCronologica() {
+    dadaViagem(SituacaoViagem.APROVADA);
+    Viagem viagem = viagem(SituacaoViagem.APROVADA);
+    when(historicoRepository.findByViagemIdOrderByRegistradoEmAscIdAsc(1L)).thenReturn(List.of(
+        new ViagemHistorico(viagem(SituacaoViagem.RASCUNHO), solicitante,
+            LocalDateTime.of(2026, 9, 1, 9, 0), null),
+        new ViagemHistorico(viagem, gestor, LocalDateTime.of(2026, 9, 2, 10, 0), null)));
+
+    List<ViagemHistoricoResponse> historico = service.historico(1L);
+
+    assertThat(historico).hasSize(2);
+    assertThat(historico.get(0).getSituacao()).isEqualTo(SituacaoViagem.RASCUNHO);
+    assertThat(historico.get(0).getResponsavel().getMatricula()).isEqualTo("1001-2");
+    assertThat(historico.get(1).getSituacao()).isEqualTo(SituacaoViagem.APROVADA);
+    assertThat(historico.get(1).getRegistradoEm()).isEqualTo(LocalDateTime.of(2026, 9, 2, 10, 0));
+  }
+
+  @Test
+  void historicoDeViagemInexistenteDeveLancarViagemNotFound() {
+    when(repository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.historico(99L))
+        .isInstanceOf(ViagemNotFoundException.class);
   }
 }

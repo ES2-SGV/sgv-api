@@ -45,6 +45,11 @@ public class ViagemController {
     service.delete(id, atorId);
   }
 
+  @GetMapping("/{id}/historico")
+  public List<ViagemHistoricoResponse> historico(@PathVariable Long id) {
+    return service.historico(id);
+  }
+
   @PostMapping("/{id}/solicitar")
   public ViagemResponse solicitar(@PathVariable Long id,
       @RequestHeader(AtorService.HEADER) Long atorId) {
