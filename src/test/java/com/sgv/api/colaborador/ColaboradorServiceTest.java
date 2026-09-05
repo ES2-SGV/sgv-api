@@ -32,7 +32,8 @@ class ColaboradorServiceTest {
 
   private ColaboradorRequest request() {
     ColaboradorRequest request = new ColaboradorRequest();
-    request.setMatricula("M-1001");
+    request.setMatricula("1001-2");
+    request.setCargo(Cargo.GESTOR);
     request.setNome("Ana Souza");
     request.setAreaId(1L);
     return request;
@@ -44,19 +45,20 @@ class ColaboradorServiceTest {
 
   @Test
   void createDeveSalvarERetornarResponse() {
-    when(repository.existsByMatricula("M-1001")).thenReturn(false);
+    when(repository.existsByMatricula("1001-2")).thenReturn(false);
     areaComercialExiste();
     when(repository.save(any(Colaborador.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     ColaboradorResponse response = service.create(request());
 
-    assertThat(response.getMatricula()).isEqualTo("M-1001");
+    assertThat(response.getMatricula()).isEqualTo("1001-2");
     assertThat(response.getArea().getNome()).isEqualTo("Comercial");
+    assertThat(response.getCargo()).isEqualTo(Cargo.GESTOR);
   }
 
   @Test
   void createComAreaInexistenteDeveLancarAreaNotFound() {
-    when(repository.existsByMatricula("M-1001")).thenReturn(false);
+    when(repository.existsByMatricula("1001-2")).thenReturn(false);
     when(areaRepository.findById(1L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.create(request()))
@@ -67,19 +69,19 @@ class ColaboradorServiceTest {
 
   @Test
   void createComMatriculaDuplicadaDeveLancarConflito() {
-    when(repository.existsByMatricula("M-1001")).thenReturn(true);
+    when(repository.existsByMatricula("1001-2")).thenReturn(true);
 
     assertThatThrownBy(() -> service.create(request()))
         .isInstanceOf(MatriculaJaCadastradaException.class)
-        .hasMessageContaining("M-1001");
+        .hasMessageContaining("1001-2");
     verify(repository, never()).save(any());
   }
 
   @Test
   void updateMantendoPropriaMatriculaNaoDeveConflitar() {
-    Colaborador existente = new Colaborador("M-1001", "Ana", new Area("Financeiro"));
+    Colaborador existente = new Colaborador("1001-2", "Ana", new Area("Financeiro"), Cargo.COLABORADOR);
     when(repository.findById(1L)).thenReturn(Optional.of(existente));
-    when(repository.existsByMatriculaAndIdNot("M-1001", 1L)).thenReturn(false);
+    when(repository.existsByMatriculaAndIdNot("1001-2", 1L)).thenReturn(false);
     areaComercialExiste();
     when(repository.save(any(Colaborador.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -87,12 +89,13 @@ class ColaboradorServiceTest {
 
     assertThat(response.getNome()).isEqualTo("Ana Souza");
     assertThat(response.getArea().getNome()).isEqualTo("Comercial");
+    assertThat(response.getCargo()).isEqualTo(Cargo.GESTOR);
   }
 
   @Test
   void updateComMatriculaDeOutroColaboradorDeveLancarConflito() {
-    when(repository.findById(1L)).thenReturn(Optional.of(new Colaborador("M-2002", "Ana", new Area("Financeiro"))));
-    when(repository.existsByMatriculaAndIdNot("M-1001", 1L)).thenReturn(true);
+    when(repository.findById(1L)).thenReturn(Optional.of(new Colaborador("2002-3", "Ana", new Area("Financeiro"), Cargo.COLABORADOR)));
+    when(repository.existsByMatriculaAndIdNot("1001-2", 1L)).thenReturn(true);
 
     assertThatThrownBy(() -> service.update(1L, request()))
         .isInstanceOf(MatriculaJaCadastradaException.class);

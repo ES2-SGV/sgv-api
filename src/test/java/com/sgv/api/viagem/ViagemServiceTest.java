@@ -1,6 +1,7 @@
 package com.sgv.api.viagem;
 
 import com.sgv.api.area.Area;
+import com.sgv.api.colaborador.Cargo;
 import com.sgv.api.colaborador.Colaborador;
 import com.sgv.api.colaborador.ColaboradorNotFoundException;
 import com.sgv.api.colaborador.ColaboradorRepository;
@@ -46,7 +47,7 @@ class ViagemServiceTest {
   @BeforeEach
   void setUp() {
     destino = new Destino("Matriz SP", "São Paulo", "Brasil");
-    colaborador = new Colaborador("M-1001", "Ana Souza", new Area("Comercial"));
+    colaborador = new Colaborador("1001-2", "Ana Souza", new Area("Comercial"), Cargo.COLABORADOR);
   }
 
   private ViagemRequest request() {
@@ -75,7 +76,7 @@ class ViagemServiceTest {
     assertThat(captor.getValue().getColaborador()).isSameAs(colaborador);
     assertThat(response.getSituacao()).isEqualTo(SituacaoViagem.RASCUNHO);
     assertThat(response.getDestino().getNome()).isEqualTo("Matriz SP");
-    assertThat(response.getColaborador().getMatricula()).isEqualTo("M-1001");
+    assertThat(response.getColaborador().getMatricula()).isEqualTo("1001-2");
   }
 
   @Test

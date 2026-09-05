@@ -29,7 +29,8 @@ class ColaboradorControllerTest {
   private ColaboradorService service;
 
   private ColaboradorResponse response() {
-    return new ColaboradorResponse(new Colaborador("M-1001", "Ana Souza", new Area("Comercial")));
+    return new ColaboradorResponse(
+        new Colaborador("1001-2", "Ana Souza", new Area("Comercial"), Cargo.GESTOR));
   }
 
   private String payload(String matricula) {
@@ -37,7 +38,8 @@ class ColaboradorControllerTest {
         {
           "matricula": "%s",
           "nome": "Ana Souza",
-          "areaId": 1
+          "areaId": 1,
+          "cargo": "GESTOR"
         }
         """.formatted(matricula);
   }
@@ -48,8 +50,9 @@ class ColaboradorControllerTest {
 
     mockMvc.perform(get("/colaboradores"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].matricula").value("M-1001"))
-        .andExpect(jsonPath("$[0].area.nome").value("Comercial"));
+        .andExpect(jsonPath("$[0].matricula").value("1001-2"))
+        .andExpect(jsonPath("$[0].area.nome").value("Comercial"))
+        .andExpect(jsonPath("$[0].cargo").value("GESTOR"));
   }
 
   @Test
@@ -58,9 +61,10 @@ class ColaboradorControllerTest {
 
     mockMvc.perform(post("/colaboradores")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(payload("M-1001")))
+        .content(payload("1001-2")))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.nome").value("Ana Souza"));
+        .andExpect(jsonPath("$.nome").value("Ana Souza"))
+        .andExpect(jsonPath("$.cargo").value("GESTOR"));
   }
 
   @Test
@@ -73,17 +77,45 @@ class ColaboradorControllerTest {
   }
 
   @Test
+  void createComMatriculaForaDoFormatoDeveRetornar400() throws Exception {
+    for (String invalida : List.of("M-1001", "1001", "10012", "1001-", "12345-6", "abcd-1", "1001-23")) {
+      mockMvc.perform(post("/colaboradores")
+          .contentType(MediaType.APPLICATION_JSON)
+          .content(payload(invalida)))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.campos.matricula")
+              .value("matrícula deve estar no formato XXXX-X (somente dígitos)"));
+    }
+  }
+
+  @Test
   void createSemAreaDeveRetornar400() throws Exception {
     mockMvc.perform(post("/colaboradores")
         .contentType(MediaType.APPLICATION_JSON)
         .content("""
             {
-              "matricula": "M-1001",
-              "nome": "Ana Souza"
+              "matricula": "1001-2",
+              "nome": "Ana Souza",
+              "cargo": "GESTOR"
             }
             """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.campos.areaId").value("área é obrigatória"));
+  }
+
+  @Test
+  void createSemCargoDeveRetornar400() throws Exception {
+    mockMvc.perform(post("/colaboradores")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+            {
+              "matricula": "1001-2",
+              "nome": "Ana Souza",
+              "areaId": 1
+            }
+            """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.campos.cargo").value("cargo é obrigatório"));
   }
 
   @Test
@@ -92,7 +124,7 @@ class ColaboradorControllerTest {
 
     mockMvc.perform(post("/colaboradores")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(payload("M-1001")))
+        .content(payload("1001-2")))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").value("Área não encontrada: 1"));
   }
@@ -100,14 +132,14 @@ class ColaboradorControllerTest {
   @Test
   void createComMatriculaDuplicadaDeveRetornar409() throws Exception {
     when(service.create(any(ColaboradorRequest.class)))
-        .thenThrow(new MatriculaJaCadastradaException("M-1001"));
+        .thenThrow(new MatriculaJaCadastradaException("1001-2"));
 
     mockMvc.perform(post("/colaboradores")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(payload("M-1001")))
+        .content(payload("1001-2")))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.status").value(409))
-        .andExpect(jsonPath("$.message").value("Matrícula já cadastrada: M-1001"));
+        .andExpect(jsonPath("$.message").value("Matrícula já cadastrada: 1001-2"));
   }
 
   @Test

@@ -1,6 +1,7 @@
 package com.sgv.api.viagem;
 
 import com.sgv.api.area.Area;
+import com.sgv.api.colaborador.Cargo;
 import com.sgv.api.colaborador.Colaborador;
 import com.sgv.api.destino.Destino;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ class ViagemControllerTest {
 
   private ViagemResponse response() {
     Destino destino = new Destino("Matriz SP", "São Paulo", "Brasil");
-    Colaborador colaborador = new Colaborador("M-1001", "Ana Souza", new Area("Comercial"));
+    Colaborador colaborador = new Colaborador("1001-2", "Ana Souza", new Area("Comercial"), Cargo.COLABORADOR);
     Viagem viagem = new Viagem(destino, colaborador, "Reunião com cliente", LocalDate.of(2026, 9, 10),
         LocalDate.of(2026, 9, 12), MeioTransporte.AEREO, SituacaoViagem.RASCUNHO);
     return new ViagemResponse(viagem);
@@ -61,7 +62,7 @@ class ViagemControllerTest {
         .andExpect(jsonPath("$[0].situacao").value("RASCUNHO"))
         .andExpect(jsonPath("$[0].dataSaida").value("2026-09-10"))
         .andExpect(jsonPath("$[0].destino.cidade").value("São Paulo"))
-        .andExpect(jsonPath("$[0].colaborador.matricula").value("M-1001"));
+        .andExpect(jsonPath("$[0].colaborador.matricula").value("1001-2"));
   }
 
   @Test

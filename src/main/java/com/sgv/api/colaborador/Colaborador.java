@@ -23,13 +23,18 @@ public class Colaborador {
   @JoinColumn(name = "area_id", nullable = false)
   private Area area;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private Cargo cargo;
+
   public Colaborador() {
   }
 
-  public Colaborador(String matricula, String nome, Area area) {
+  public Colaborador(String matricula, String nome, Area area, Cargo cargo) {
     this.matricula = matricula;
     this.nome = nome;
     this.area = area;
+    this.cargo = cargo;
   }
 
   public Long getId() {
@@ -58,6 +63,14 @@ public class Colaborador {
 
   public void setArea(Area area) {
     this.area = area;
+  }
+
+  public Cargo getCargo() {
+    return this.cargo;
+  }
+
+  public void setCargo(Cargo cargo) {
+    this.cargo = cargo;
   }
 
 }

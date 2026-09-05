@@ -34,7 +34,7 @@ public class ColaboradorService {
       throw new MatriculaJaCadastradaException(request.getMatricula());
     }
     Colaborador colaborador = new Colaborador(request.getMatricula(), request.getNome(),
-        buscarArea(request.getAreaId()));
+        buscarArea(request.getAreaId()), request.getCargo());
     return new ColaboradorResponse(repository.save(colaborador));
   }
 
@@ -47,6 +47,7 @@ public class ColaboradorService {
     colaborador.setMatricula(request.getMatricula());
     colaborador.setNome(request.getNome());
     colaborador.setArea(buscarArea(request.getAreaId()));
+    colaborador.setCargo(request.getCargo());
     return new ColaboradorResponse(repository.save(colaborador));
   }
 
