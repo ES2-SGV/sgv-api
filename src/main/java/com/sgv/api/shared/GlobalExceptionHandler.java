@@ -67,4 +67,10 @@ public class GlobalExceptionHandler {
   public ApiError handleCorpoIlegivel(HttpMessageNotReadableException ex) {
     return new ApiError(HttpStatus.BAD_REQUEST.value(), "corpo da requisição inválido");
   }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ApiError handleIllegalArgument(IllegalArgumentException ex) {
+    return new ApiError(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+  }
 }
