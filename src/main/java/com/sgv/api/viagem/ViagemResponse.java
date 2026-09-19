@@ -3,7 +3,9 @@ package com.sgv.api.viagem;
 import com.sgv.api.colaborador.ColaboradorResponse;
 import com.sgv.api.destino.DestinoResponse;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.sgv.api.viagem.despesa.Despesa;
 
 public class ViagemResponse {
 
@@ -16,6 +18,7 @@ public class ViagemResponse {
   private MeioTransporte meioTransporte;
   private SituacaoViagem situacao;
   private String motivoAjuste;
+  private BigDecimal valorTotal;
 
   public ViagemResponse(Viagem viagem) {
     this.id = viagem.getId();
@@ -30,6 +33,9 @@ public class ViagemResponse {
     this.meioTransporte = viagem.getMeioTransporte();
     this.situacao = viagem.getSituacao();
     this.motivoAjuste = viagem.getMotivoAjuste();
+    this.valorTotal = viagem.getDespesas() != null 
+        ? viagem.getDespesas().stream().map(Despesa::getValor).reduce(BigDecimal.ZERO, BigDecimal::add)
+        : BigDecimal.ZERO;
   }
 
   public Long getId() {
@@ -66,5 +72,9 @@ public class ViagemResponse {
 
   public String getMotivoAjuste() {
     return motivoAjuste;
+  }
+
+  public BigDecimal getValorTotal() {
+    return valorTotal;
   }
 }
