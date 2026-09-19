@@ -7,6 +7,9 @@ import com.sgv.api.destino.Destino;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import com.sgv.api.viagem.despesa.Despesa;
 
 @Entity
 @Table(name = "viagem")
@@ -56,6 +59,9 @@ public class Viagem {
   /** O que o gestor pediu para ajustar. Preenchido só enquanto EM_AJUSTE. */
   @Column(name = "motivo_ajuste", length = 500)
   private String motivoAjuste;
+
+  @OneToMany(mappedBy = "viagem", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Despesa> despesas = new ArrayList<>();
 
   public Viagem() {
   }
@@ -145,6 +151,10 @@ public class Viagem {
 
   public void setMotivoAjuste(String motivoAjuste) {
     this.motivoAjuste = motivoAjuste;
+  }
+
+  public List<Despesa> getDespesas() {
+    return this.despesas;
   }
 
 }
